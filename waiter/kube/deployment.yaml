@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: waiter
+  labels:
+    app: waiter
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: waiter
+  template:
+    metadata:
+      labels:
+        app: waiter
+    spec:
+      containers:
+      - name: waiter
+        image: localhost:5000/coffeeshop/waiter:latest
+        ports:
+        - containerPort: 8080
