@@ -3,8 +3,13 @@ kind: Ingress
 metadata:
   name: registry-ingress
   annotations:
-    traefik.ingress.k8s.io/router.entrypoints: web
+    traefik.ingress.k8s.io/router.entrypoints: web,websecure
+    traefik.ingress.k8s.io/router.tls: "true"
 spec:
+  tls: 
+  - hosts: 
+    - registry.local
+    secretName: registry-tls-secret
   rules:
   - host: registry.local
     http:
