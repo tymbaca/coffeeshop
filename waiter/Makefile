@@ -1,7 +1,8 @@
-export REGISTRY=localhost:5000
+export REGISTRY=registry.local:5000
 
 build:
-	docker buildx build --platform linux/amd64 -t $(REGISTRY)/coffeeshop/waiter:latest -f ./kube/Dockerfile .
+	# docker buildx build --platform linux/amd64 -t $(REGISTRY)/coffeeshop/waiter:latest -f ./kube/Dockerfile .
+	docker build -t $(REGISTRY)/coffeeshop/waiter:latest -f ./kube/Dockerfile .
 	docker push $(REGISTRY)/coffeeshop/waiter:latest
 
 apply:

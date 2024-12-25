@@ -3,10 +3,10 @@ kind: Service
 metadata:
   name: waiter-service
 spec:
+  type: LoadBalancer
   selector:
     app: waiter
   ports:
   - protocol: TCP
     port: 80
     targetPort: 8080
-  type: LoadBalancer
