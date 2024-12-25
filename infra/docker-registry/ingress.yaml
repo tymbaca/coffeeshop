@@ -5,10 +5,10 @@ metadata:
 spec:
   tls:
     - hosts:
-        - registry.local
+        - registry.tymbaca
       secretName: registry-tls
   rules:
-    - host: registry.local
+    - host: registry.tymbaca
       http:
         paths:
           - path: /
