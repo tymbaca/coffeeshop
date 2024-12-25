@@ -3,8 +3,7 @@ kind: Ingress
 metadata:
   name: registry-ingress
   annotations:
-    traefik.ingress.k8s.io/router.entrypoints: web,websecure
-    traefik.ingress.k8s.io/router.tls: "true"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
 spec:
   tls: 
   - hosts: 
