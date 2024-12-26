@@ -11,7 +11,7 @@ COPY . .
 RUN go mod download
 
 # Build the Go application
-RUN go build -o main ./cmd/waiter
+RUN GOOS=linux GOARCH=arm64 go build -o main ./cmd/waiter
 
 # Use a minimal base image for production
 FROM alpine:latest
@@ -19,6 +19,9 @@ FROM alpine:latest
 # Set up working directory and copy binary
 WORKDIR /root/
 COPY --from=builder /app/main .
+
+RUN apk add file
+RUN file main
 
 # Expose application port
 EXPOSE 8080

@@ -16,6 +16,6 @@ spec:
     spec:
       containers:
       - name: waiter
-        image: registry.local/coffeeshop/waiter:latest
+        image: registry.tymbaca/coffeeshop/waiter:latest
         ports:
         - containerPort: 8080
