@@ -1,7 +1,8 @@
 export REGISTRY=registry.tymbaca
 
 build:
-	docker buildx build --platform linux/aarch64 --progress=plain -t coffeeshop/waiter:latest -f ./kube/Dockerfile .
+	docker buildx create --use
+	docker buildx build --platform linux/arm64,linux/amd64 -t coffeeshop/waiter:latest -f ./kube/Dockerfile .
 	docker tag coffeeshop/waiter $(REGISTRY)/coffeeshop/waiter:latest
 	docker push $(REGISTRY)/coffeeshop/waiter:latest
 
