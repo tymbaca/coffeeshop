@@ -1,0 +1,13 @@
+stages:
+  - build
+
+variables:
+  CI_REGISTRY: gitlab.tymbaca
+  CI_IMAGE: coffeeshop/waiter
+  CI_DOCKERFILE: ./kube/Dockerfile
+
+build:
+  stage: build
+  script: 
+  - docker build -f ${CI_DOCKERFILE} -t ${CI_REGISTRY}/${CI_IMAGE}
+  - docker push ${CI_REGISTRY}/${CI_IMAGE}
