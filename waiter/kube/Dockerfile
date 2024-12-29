@@ -14,18 +14,16 @@ RUN go mod download
 RUN GOOS=linux GOARCH=arm64 go build -o main ./cmd/waiter
 
 # Use a minimal base image for production
-FROM alpine:latest
+FROM ubuntu:22.04
 
 # Set up working directory and copy binary
 WORKDIR /root/
 COPY --from=builder /app/main .
-
-RUN apk add file
-RUN file main
 
 # Expose application port
 EXPOSE 8080
 
 # Run the application
 RUN chmod +x main
-CMD ["./main"]
+# CMD ["./main"]
+CMD ["tail -f /dev/null"]

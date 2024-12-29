@@ -1,3 +1,5 @@
+image: "docker:24.0.5"
+
 stages:
   - build
 
@@ -9,6 +11,6 @@ variables:
 build:
   stage: build
   script: 
-  - echo "hello world"
-  # - docker build -f ${CI_DOCKERFILE} -t ${CI_REGISTRY}/${CI_IMAGE}
-  # - docker push ${CI_REGISTRY}/${CI_IMAGE}
+  # - echo "hello world"
+  - docker build -f ${CI_DOCKERFILE} -t ${CI_REGISTRY}/${CI_IMAGE}
+  - docker push ${CI_REGISTRY}/${CI_IMAGE}
