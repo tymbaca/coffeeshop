@@ -116,7 +116,7 @@ concurrent: 10
 ## Number of seconds until the forceful shutdown operation times out and exits the process.
 ## ref: https://docs.gitlab.com/runner/configuration/advanced-configuration.html#the-global-section
 ##
-shutdown_timeout: 0
+shutdown_timeout: 60
 
 ## Defines in seconds how often to check GitLab for new builds
 ## ref: https://docs.gitlab.com/runner/configuration/advanced-configuration.html#the-global-section
@@ -126,7 +126,7 @@ checkInterval: 3
 ## Configure GitLab Runner's logging level. Available values are: debug, info, warn, error, fatal, panic
 ## ref: https://docs.gitlab.com/runner/configuration/advanced-configuration.html#the-global-section
 ##
-# logLevel:
+logLevel: debug
 
 ## Configure GitLab Runner's logging format. Available values are: runner, text, json
 ## ref: https://docs.gitlab.com/runner/configuration/advanced-configuration.html#the-global-section
@@ -237,7 +237,7 @@ rbac:
 
   ## Run the gitlab-bastion container with the ability to deploy/manage containers of jobs
   ## cluster-wide or only within namespace
-  clusterWideAccess: false
+  clusterWideAccess: true # TODO:
 
   ## Use the following Kubernetes Service Account name if RBAC is disabled in this Helm chart (see rbac.create)
   ## DEPRECATED: Please use `serviceAccount.name` instead
@@ -276,7 +276,7 @@ serviceAccount:
   ## Specifies whether a ServiceAccount should be created
   ##
   ## TODO: Set default to `false`
-  # create: false
+  create: true
   ## The name of the ServiceAccount to use.
   ## If not set and create is `true`, a name is generated using the `gitlab-runner.fullname`` template
   ##
@@ -440,6 +440,9 @@ runners:
   # runner configuration: https://docs.gitlab.com/runner/configuration/advanced-configuration.html
   config: |
     [[runners]]
+      name = "shell executor runner"
+      executor = "shell"
+      shell = "bash"
       [runners.kubernetes]
         tls_verify = false
         namespace = "{{.Release.Namespace}}"
@@ -447,6 +450,7 @@ runners:
         privileged = true
       [runners.docker]
         extra_hosts = ["gitlab.tymbaca:192.168.109.7"]
+        tls_verify = true
 
   ## Absolute path for an existing runner configuration file
   ## Can be used alongside "volumes" and "volumeMounts" to use an external config file
@@ -455,7 +459,7 @@ runners:
 
   ## Which executor should be used
   ##
-  # executor: kubernetes
+  executor: kubernetes
 
   ## DEPRECATED: Specify whether the runner should be locked to a specific project: true, false.
   ##
