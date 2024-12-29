@@ -440,9 +440,9 @@ runners:
   # runner configuration: https://docs.gitlab.com/runner/configuration/advanced-configuration.html
   config: |
     [[runners]]
-      name = "shell executor runner"
-      executor = "shell"
-      shell = "bash"
+      name = "docker executor runner"
+      executor = "docker"
+      # shell = "bash"
       # [runners.kubernetes]
       #   tls_verify = false
       #   namespace = "{{.Release.Namespace}}"
@@ -451,6 +451,11 @@ runners:
       [runners.docker]
         extra_hosts = ["gitlab.tymbaca:192.168.109.7"]
         tls_verify = true
+        image = "docker:24.0.5"
+        privileged = true
+        disable_cache = false
+        # volumes = ["/certs/client", "/cache"]
+
 
   ## Absolute path for an existing runner configuration file
   ## Can be used alongside "volumes" and "volumeMounts" to use an external config file
@@ -459,7 +464,7 @@ runners:
 
   ## Which executor should be used
   ##
-  executor: shell
+  executor: docker
 
   ## DEPRECATED: Specify whether the runner should be locked to a specific project: true, false.
   ##
