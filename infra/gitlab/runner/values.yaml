@@ -199,7 +199,7 @@ rbac:
   ## Specifies whether a Role and RoleBinding should be created
   ## If this value is set to `true`, `serviceAccount.create` should also be set to either `true` or `false`
   ##
-  create: true
+  create: false
   ## Define the generated serviceAccountName when create is set to true
   ## It defaults to "gitlab-runner.fullname" if not provided
   ## DEPRECATED: Please use `serviceAccount.name` instead
@@ -276,7 +276,7 @@ serviceAccount:
   ## Specifies whether a ServiceAccount should be created
   ##
   ## TODO: Set default to `false`
-  create: true
+  create: false
   ## The name of the ServiceAccount to use.
   ## If not set and create is `true`, a name is generated using the `gitlab-runner.fullname`` template
   ##
@@ -443,11 +443,11 @@ runners:
       name = "shell executor runner"
       executor = "shell"
       shell = "bash"
-      [runners.kubernetes]
-        tls_verify = false
-        namespace = "{{.Release.Namespace}}"
-        image = "alpine"
-        privileged = true
+      # [runners.kubernetes]
+      #   tls_verify = false
+      #   namespace = "{{.Release.Namespace}}"
+      #   image = "docker"
+      #   privileged = true
       [runners.docker]
         extra_hosts = ["gitlab.tymbaca:192.168.109.7"]
         tls_verify = true
@@ -459,7 +459,7 @@ runners:
 
   ## Which executor should be used
   ##
-  executor: kubernetes
+  executor: shell
 
   ## DEPRECATED: Specify whether the runner should be locked to a specific project: true, false.
   ##
