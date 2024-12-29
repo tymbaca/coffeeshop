@@ -199,7 +199,7 @@ rbac:
   ## Specifies whether a Role and RoleBinding should be created
   ## If this value is set to `true`, `serviceAccount.create` should also be set to either `true` or `false`
   ##
-  create: true
+  create: false
   ## Define the generated serviceAccountName when create is set to true
   ## It defaults to "gitlab-runner.fullname" if not provided
   ## DEPRECATED: Please use `serviceAccount.name` instead
@@ -438,9 +438,12 @@ runners:
   # runner configuration: https://docs.gitlab.com/runner/configuration/advanced-configuration.html
   config: |
     [[runners]]
+      tls_verify = false
       [runners.kubernetes]
         namespace = "{{.Release.Namespace}}"
         image = "alpine"
+      [runners.docker]
+        extra_hosts = ["gitlab.tymbaca:192.168.109.7"]
 
   ## Absolute path for an existing runner configuration file
   ## Can be used alongside "volumes" and "volumeMounts" to use an external config file
