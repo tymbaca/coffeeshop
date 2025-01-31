@@ -2,7 +2,6 @@ package model
 
 type Order struct {
 	Type CoffeeType `json:"type"`
-	Size CoffeeSize `json:"size"`
 }
 
 type CoffeeType string
@@ -10,6 +9,7 @@ type CoffeeType string
 const (
 	Cappuccino CoffeeType = "Cappuccino"
 	Latte      CoffeeType = "Latte"
+	Espresso   CoffeeType = "Espresso"
 )
 
 type CoffeeSize int
