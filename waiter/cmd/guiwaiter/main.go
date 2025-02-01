@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -12,7 +13,10 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/widget"
+	"github.com/nats-io/nats.go"
+	"github.com/tymbaca/coffeeshop/waiter/logger"
 	"github.com/tymbaca/coffeeshop/waiter/model"
+	"github.com/tymbaca/coffeeshop/waiter/tracer"
 )
 
 const (
@@ -22,7 +26,19 @@ const (
 
 var _log = widget.NewMultiLineEntry()
 
+var _natsConn *nats.Conn
+
 func main() {
+	if err := tracer.Init("localhost:4318"); err != nil {
+		logger.Fatal(err.Error())
+	}
+
+	natsConn, err := nats.Connect("nats://localhost:4222")
+	if err != nil {
+		panic(err)
+	}
+	_natsConn = natsConn
+
 	a := app.New()
 	w := a.NewWindow("Hello World")
 	w.Resize(fyne.NewSize(_winWidth, _winHeight))
@@ -35,7 +51,8 @@ func main() {
 	sendButton := widget.NewButton("order coffee", func() {
 		order := randomOrder()
 
-		go sendOrder(order)
+		// go sendOrderHttp(order)
+		go sendOrderNats(_natsConn, order)
 
 		lastOrderedData.Set(string(order.Type))
 	})
@@ -52,7 +69,29 @@ func randomOrder() model.Order {
 	}
 }
 
-func sendOrder(order model.Order) {
+func sendOrderNats(conn *nats.Conn, order model.Order) {
+	ctx, span := tracer.Start(context.Background(), "OrderCoffee")
+	defer span.End()
+
+	data, err := json.Marshal(order)
+	if err != nil {
+		logErr(err)
+		return
+	}
+
+	msg := nats.NewMsg("order")
+	for key, val := range tracer.ToMap(ctx) {
+		msg.Header.Add(key, val)
+	}
+	msg.Data = data
+
+	if err := conn.PublishMsg(msg); err != nil {
+		logErr(err)
+		return
+	}
+}
+
+func sendOrderHttp(order model.Order) {
 	data, err := json.Marshal(order)
 	if err != nil {
 		logErr(err)

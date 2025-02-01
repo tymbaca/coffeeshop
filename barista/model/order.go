@@ -1,6 +1,9 @@
 package model
 
+import "context"
+
 type Order struct {
+	Ctx  context.Context
 	Type CoffeeType `json:"type"`
 }
 

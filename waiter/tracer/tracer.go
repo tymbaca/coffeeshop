@@ -14,7 +14,7 @@ import (
 	otrace "go.opentelemetry.io/otel/trace"
 )
 
-const _serviceName = "coffeeshop/barista"
+const _serviceName = "coffeeshop/waiter"
 
 var DefaultTracer = otel.Tracer(_serviceName)
 

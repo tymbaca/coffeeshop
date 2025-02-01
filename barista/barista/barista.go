@@ -44,10 +44,7 @@ func NewBarista(ctx context.Context, workerCount int) *Barista {
 	return b
 }
 
-func (b *Barista) HandleOrder(w http.ResponseWriter, r *http.Request) {
-	_, span := tracer.Start(r.Context(), "HandleOrder")
-	defer span.End()
-
+func (b *Barista) HTTPHandleOrder(w http.ResponseWriter, r *http.Request) {
 	var order model.Order
 	err := json.NewDecoder(r.Body).Decode(&order)
 	if err != nil {
@@ -56,11 +53,22 @@ func (b *Barista) HandleOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	b.HandleOrder(r.Context(), order)
+}
+
+func (b *Barista) HandleOrder(ctx context.Context, order model.Order) {
+	ctx, span := tracer.Start(ctx, "HandleOrder")
+	defer span.End()
+
+	order.Ctx = ctx
+
 	b.orderCh <- order
 }
 
 func (b *Barista) runWorker(ctx context.Context) {
 	for order := range b.orderCh {
+		ctx = order.Ctx
+
 		err := b.cook(ctx, order)
 		if err != nil {
 			logger.Error(err.Error())
