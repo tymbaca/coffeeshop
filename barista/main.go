@@ -9,11 +9,16 @@ import (
 
 	"github.com/tymbaca/coffeeshop/barista/barista"
 	"github.com/tymbaca/coffeeshop/barista/logger"
+	"github.com/tymbaca/coffeeshop/barista/tracer"
 )
 
 func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
+
+	if err := tracer.Init("localhost:4318"); err != nil {
+		logger.Fatal(err.Error())
+	}
 
 	b := barista.NewBarista(ctx, 4)
 

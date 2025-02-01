@@ -3,15 +3,18 @@ package barista
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"sync"
 	"time"
 
 	"github.com/brianvoe/gofakeit/v7"
-	"github.com/google/uuid"
 	"github.com/tymbaca/coffeeshop/barista/logger"
 	"github.com/tymbaca/coffeeshop/barista/model"
+	"github.com/tymbaca/coffeeshop/barista/tracer"
+	"github.com/tymbaca/coffeeshop/barista/xerr"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type Barista struct {
@@ -25,8 +28,8 @@ type Barista struct {
 func NewBarista(ctx context.Context, workerCount int) *Barista {
 	b := &Barista{
 		orderCh:     make(chan model.Order, 1),
-		milk:        10_000,
-		coffeeBeans: 5_000,
+		milk:        1_000,
+		coffeeBeans: 200,
 	}
 
 	for range workerCount {
@@ -42,6 +45,9 @@ func NewBarista(ctx context.Context, workerCount int) *Barista {
 }
 
 func (b *Barista) HandleOrder(w http.ResponseWriter, r *http.Request) {
+	_, span := tracer.Start(r.Context(), "HandleOrder")
+	defer span.End()
+
 	var order model.Order
 	err := json.NewDecoder(r.Body).Decode(&order)
 	if err != nil {
@@ -60,15 +66,26 @@ func (b *Barista) runWorker(ctx context.Context) {
 			logger.Error(err.Error())
 			continue
 		}
+
+		logger.Infof("resources left: milk: %dml, coffee: %dg", b.milk, b.coffeeBeans)
 	}
 }
 
-func (b *Barista) cook(ctx context.Context, order model.Order) error {
+func (b *Barista) cook(ctx context.Context, order model.Order) (err error) {
+	ctx, span := tracer.Start(ctx, "cook coffee", trace.WithAttributes(attribute.String("type", string(order.Type))))
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
+		}
+		span.End()
+	}()
+
 	if order.Type == "" {
-		return fmt.Errorf("say something, please")
+		return xerr.Errorf(ctx, "say something, please")
 	}
 
-	orderID := uuid.New().String()
+	orderID := span.SpanContext().TraceID().String()
 
 	logger.Infof("got order %s: %v", orderID, order)
 	start := time.Now()
@@ -79,52 +96,61 @@ func (b *Barista) cook(ctx context.Context, order model.Order) error {
 	switch order.Type {
 	case model.Cappuccino:
 		if err := b.brewCappuccino(ctx); err != nil {
-			return fmt.Errorf("can't brew cappuccino: %w", err)
+			return xerr.Errorf(ctx, "can't brew cappuccino: %w", err)
 		}
 	case model.Latte:
 		if err := b.brewLatte(ctx); err != nil {
-			return fmt.Errorf("can't brew latte: %w", err)
+			return xerr.Errorf(ctx, "can't brew latte: %w", err)
 		}
 	case model.Espresso:
 		if err := b.brewEspresso(ctx); err != nil {
-			return fmt.Errorf("can't brew espresso: %w", err)
+			return xerr.Errorf(ctx, "can't brew espresso: %w", err)
 		}
 	default:
-		return fmt.Errorf("we don't brew %s", order.Type)
+		return xerr.Errorf(ctx, "we don't brew %s", order.Type)
 	}
 
 	return nil
 }
 
 func (b *Barista) brewCappuccino(ctx context.Context) error {
+	ctx, span := tracer.Start(ctx, "brewCappuccino")
+	defer span.End()
+
 	if err := b.brewEspresso(ctx); err != nil {
-		return fmt.Errorf("can't brew espresso: %w", err)
+		return xerr.Errorf(ctx, "can't brew espresso: %w", err)
 	}
 
 	if err := b.pourMilk(ctx, 200); err != nil {
-		return fmt.Errorf("can't pout milk: %w", err)
+		return xerr.Errorf(ctx, "can't pout milk: %w", err)
 	}
 
 	return nil
 }
 
 func (b *Barista) brewLatte(ctx context.Context) error {
+	ctx, span := tracer.Start(ctx, "brewLatte")
+	defer span.End()
+
 	if err := b.brewEspresso(ctx); err != nil {
-		return fmt.Errorf("can't brew espresso: %w", err)
+		return xerr.Errorf(ctx, "can't brew espresso: %w", err)
 	}
 
 	if err := b.pourMilk(ctx, 350); err != nil {
-		return fmt.Errorf("can't pout milk: %w", err)
+		return xerr.Errorf(ctx, "can't pout milk: %w", err)
 	}
 
 	return nil
 }
 
 func (b *Barista) brewEspresso(ctx context.Context) error {
+	ctx, span := tracer.Start(ctx, "brewEspresso")
+	defer span.End()
+
 	const amount = 8
 
 	if err := b.getBeans(ctx, amount); err != nil {
-		return fmt.Errorf("can't get beans: %w", err)
+		return xerr.Errorf(ctx, "can't get beans: %w", err)
 	}
 
 	sleep(5000, 8000)
@@ -133,20 +159,28 @@ func (b *Barista) brewEspresso(ctx context.Context) error {
 }
 
 func (b *Barista) pourMilk(ctx context.Context, amount int) error {
+	ctx, span := tracer.Start(ctx, "pourMilk")
+	defer span.End()
+
 	if err := b.getMilk(ctx, amount); err != nil {
-		return fmt.Errorf("can't get milk: %w", err)
+		return xerr.Errorf(ctx, "can't get milk: %w", err)
 	}
 
 	sleep(1000, 2000)
 	return nil
 }
 
-func (b *Barista) getBeans(_ context.Context, amount int) error {
+func (b *Barista) getBeans(ctx context.Context, amount int) error {
+	ctx, span := tracer.Start(ctx, "getBeans")
+	defer span.End()
+
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
+	sleep(1000, 2000)
+
 	if b.coffeeBeans < amount {
-		return fmt.Errorf("not enough coffee beans")
+		return xerr.Errorf(ctx, "not enough coffee beans")
 	}
 
 	b.coffeeBeans -= amount
@@ -154,18 +188,26 @@ func (b *Barista) getBeans(_ context.Context, amount int) error {
 	return nil
 }
 
-func (b *Barista) getMilk(_ context.Context, amount int) error {
+func (b *Barista) getMilk(ctx context.Context, amount int) error {
+	ctx, span := tracer.Start(ctx, "getMilk")
+	defer span.End()
+
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
+	sleep(1000, 2000)
+
 	if b.milk < amount {
-		return fmt.Errorf("not enough milk")
+		return xerr.Errorf(ctx, "not enough milk")
 	}
 
 	b.milk -= amount
 	return nil
 }
 
+const speed = 4
+
 func sleep(min, max int) {
-	time.Sleep(time.Duration(gofakeit.IntRange(min, max)) * time.Millisecond)
+	dur := time.Duration(gofakeit.IntRange(min, max)) * time.Millisecond
+	time.Sleep(dur / speed)
 }
