@@ -2,7 +2,6 @@ package tracer
 
 import (
 	"context"
-	"time"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
@@ -38,12 +37,7 @@ func Init(endpoint string) error {
 	}
 
 	tracerProvider := trace.NewTracerProvider(
-		trace.WithBatcher(
-			exporter,
-			trace.WithMaxExportBatchSize(trace.DefaultMaxExportBatchSize),
-			trace.WithBatchTimeout(trace.DefaultScheduleDelay*time.Millisecond),
-			trace.WithMaxExportBatchSize(trace.DefaultMaxExportBatchSize),
-		),
+		trace.WithBatcher(exporter),
 		trace.WithResource(
 			resource.NewWithAttributes(
 				semconv.SchemaURL,

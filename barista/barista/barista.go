@@ -129,7 +129,7 @@ func (b *Barista) brewCappuccino(ctx context.Context) error {
 		return xerr.Errorf(ctx, "can't brew espresso: %w", err)
 	}
 
-	if err := b.pourMilk(ctx, 200); err != nil {
+	if err := b.mixWithMilk(ctx, 200); err != nil {
 		return xerr.Errorf(ctx, "can't pout milk: %w", err)
 	}
 
@@ -144,7 +144,7 @@ func (b *Barista) brewLatte(ctx context.Context) error {
 		return xerr.Errorf(ctx, "can't brew espresso: %w", err)
 	}
 
-	if err := b.pourMilk(ctx, 350); err != nil {
+	if err := b.mixWithMilk(ctx, 350); err != nil {
 		return xerr.Errorf(ctx, "can't pout milk: %w", err)
 	}
 
@@ -157,29 +157,46 @@ func (b *Barista) brewEspresso(ctx context.Context) error {
 
 	const amount = 8
 
-	if err := b.getBeans(ctx, amount); err != nil {
+	if err := b.getPowder(ctx, amount); err != nil {
 		return xerr.Errorf(ctx, "can't get beans: %w", err)
 	}
 
-	sleep(5000, 8000)
+	b.boilAndBrew(ctx)
 
 	return nil
 }
 
-func (b *Barista) pourMilk(ctx context.Context, amount int) error {
-	ctx, span := tracer.Start(ctx, "pourMilk")
+func (b *Barista) boilAndBrew(ctx context.Context) {
+	ctx, span := tracer.Start(ctx, "boilAndBrew")
+	defer span.End()
+
+	// do some work
+	sleep(5000, 8000)
+}
+
+func (b *Barista) mixWithMilk(ctx context.Context, amount int) error {
+	ctx, span := tracer.Start(ctx, "mixWithMilk")
 	defer span.End()
 
 	if err := b.getMilk(ctx, amount); err != nil {
 		return xerr.Errorf(ctx, "can't get milk: %w", err)
 	}
 
+	b.pourMilk(ctx, amount)
+
 	sleep(1000, 2000)
 	return nil
 }
 
-func (b *Barista) getBeans(ctx context.Context, amount int) error {
-	ctx, span := tracer.Start(ctx, "getBeans")
+func (b *Barista) pourMilk(ctx context.Context, _ int) {
+	_, span := tracer.Start(ctx, "pourMilk")
+	defer span.End()
+
+	sleep(1000, 2000)
+}
+
+func (b *Barista) getPowder(ctx context.Context, amount int) error {
+	ctx, span := tracer.Start(ctx, "getPowder")
 	defer span.End()
 
 	b.mu.Lock()
